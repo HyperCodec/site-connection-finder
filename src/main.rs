@@ -10,6 +10,7 @@ use reqwest::{header::CONTENT_TYPE, Client, Proxy};
 use surrealdb::{engine::local::{Db, SurrealKV}, Surreal};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber::EnvFilter;
+use url::Url;
 
 #[derive(Parser)]
 #[command(
@@ -92,6 +93,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 #[async_recursion]
 async fn discover_sites(table: String, source: Option<SiteURLNode>, url: String, state: Arc<AppState>) -> anyhow::Result<()> {
+    // helps with comparing string urls
+    let url = Url::parse(&url)?.to_string();
+
     // check to make sure site isnt already there.
     let mut res = state.db
         .query("SELECT id FROM type::table($table) WHERE url = $url LIMIT 1")

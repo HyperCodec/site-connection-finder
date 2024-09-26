@@ -18,3 +18,4 @@ surrealdb = { version = "2.0.2", features = ["kv-surrealkv"] }
 tokio = { version = "1.40.0", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+url = "2.5.2"
