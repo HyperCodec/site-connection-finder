@@ -5,7 +5,7 @@ use std::{collections::HashSet, error::Error, path::PathBuf, sync::Arc};
 use async_recursion::async_recursion;
 use clap::Parser;
 use linkify::{LinkFinder, LinkKind};
-use model::{Record, SiteURLNode};
+use model::{Record, Relation, SiteURLNode};
 use reqwest::{header::CONTENT_TYPE, Client, Proxy};
 use surrealdb::{engine::local::{Db, SurrealKV}, Surreal};
 use tracing::{debug, error, info, trace};
@@ -118,11 +118,13 @@ async fn discover_sites(table: String, source: Option<SiteURLNode>, url: String,
     obj.id = Some(newsource.id.clone());
 
     if let Some(source) = source {
-        state.db
-            .query("RELATE $sourceid->connection->$currentid")
-            .bind(("sourceid", source.id.unwrap().to_raw()))
-            .bind(("currentid", newsource.id.to_raw()))
+        let mut res = state.db
+            .query("RELATE $sourceid->containslink->$currentid")
+            .bind(("sourceid", source.id.unwrap()))
+            .bind(("currentid", newsource.id))
             .await?;
+
+        let _: Option<Relation> = res.take(0)?;
     }
 
     // get content

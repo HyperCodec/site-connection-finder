@@ -20,3 +20,10 @@ impl SiteURLNode {
 pub struct Record {
     pub id: Thing,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct Relation {
+    #[serde(rename = "in")]
+    pub a_in: Thing,
+    pub out: Thing,
+}
