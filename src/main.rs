@@ -23,6 +23,12 @@ struct Cli {
 
     #[arg(short, long, help = "The initial site to parse")]
     url: String,
+
+    #[arg(short, long, help = "The namespace to use in surrealDB", default_value = "findconn")]
+    ns: String,
+
+    #[arg(short, long, help = "The database name to use in surrealDB. Defaults to `tree-{url}` if not specified.")]
+    db: Option<String>,
 }
 
 struct AppState {
@@ -45,10 +51,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     trace!("Setting up SurrealDB");
     let db = Surreal::new::<SurrealKV>(args.output).await?;
     
-    let db_name = format!("tree-{}", args.url);
+    let db_name = if let Some(db_name) = args.db {
+        db_name
+    } else {
+        format!("tree-{}", args.url)
+    };
     info!("Using db name: {db_name:?}");
 
-    db.use_ns("findconn").use_db(db_name).await?;
+    db.use_ns(args.ns).use_db(db_name).await?;
 
     trace!("SurrealDB setup successfully");
 
