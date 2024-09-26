@@ -15,7 +15,7 @@ use tracing_subscriber::EnvFilter;
 #[command(
     name = "findconn",
     author = "HyperCodec",
-    about = "Finds all connected links (at least ones accessible via GET request) and "
+    about = "Finds all connected links (at least ones accessible via GET request) and dumps them into a SurrealDB database."
 )]
 struct Cli {
     #[arg(short, long, help = "The output DB directory")]
