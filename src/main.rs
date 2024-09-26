@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn discover_sites(table: String, source: Option<SiteURLNode>, url: String, state: Arc<AppState>) -> anyhow::Result<()> {
     // check to make sure site isnt already there.
     let mut res = state.db
-        .query("SELECT id FROM $table WHERE url = $url")
+        .query("SELECT id FROM type::table($table) WHERE url = $url LIMIT 1")
         .bind(("url", url.clone()))
         .bind(("table", table.clone()))
         .await?;
