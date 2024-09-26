@@ -36,6 +36,9 @@ struct Cli {
 
     #[arg(short, long, help = "A proxy so you dont blast your home IP across the web (recommended)")]
     proxy: Option<String>,
+
+    #[arg(short, long, help = "The table used for relations", default_value = "containslink")]
+    relate_table: String,
 }
 
 struct AppState {
@@ -85,14 +88,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     });
 
     info!("Scraping for site linkages ...");
-    discover_sites(args.table, None, args.url, state).await?;
+    discover_sites(args.table, args.relate_table, None, args.url, state).await?;
     info!("Done scraping connections");
 
     Ok(())
 }
 
 #[async_recursion]
-async fn discover_sites(table: String, source: Option<SiteURLNode>, url: String, state: Arc<AppState>) -> anyhow::Result<()> {
+async fn discover_sites(table: String, relate_table: String, source: Option<SiteURLNode>, url: String, state: Arc<AppState>) -> anyhow::Result<()> {
     // helps with comparing string urls
     let url = Url::parse(&url)?.to_string();
 
@@ -119,9 +122,10 @@ async fn discover_sites(table: String, source: Option<SiteURLNode>, url: String,
 
     if let Some(source) = source {
         let mut res = state.db
-            .query("RELATE $sourceid->containslink->$currentid")
+            .query("RELATE $sourceid->$relation->$currentid")
             .bind(("sourceid", source.id.unwrap()))
             .bind(("currentid", newsource.id))
+            .bind(("relation", relate_table.clone()))
             .await?;
 
         let _: Option<Relation> = res.take(0)?;
@@ -162,8 +166,9 @@ async fn discover_sites(table: String, source: Option<SiteURLNode>, url: String,
         let state2 = state.clone();
         let obj2 = obj.clone();
         let table2 = table.clone();
+        let relate_table2 = relate_table.clone();
         handles.push(tokio::spawn(async move {
-            discover_sites(table2, Some(obj2), link, state2).await
+            discover_sites(table2, relate_table2, Some(obj2), link, state2).await
         }));
     }
 
