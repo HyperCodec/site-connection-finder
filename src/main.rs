@@ -125,9 +125,9 @@ async fn discover_sites(source: Option<SiteURLNode>, url: String, state: Arc<App
 
     for h in handles {
         let result = h.await?;
-        if result.is_err() {
+        if let Err(err) = result {
             // i don't think there's any fatal errors here so it's ok to just log it instead of bubbling it up.
-            error!("{:?}", result.unwrap_err());
+            error!("{err:?}");
         }
     }
 
