@@ -122,13 +122,12 @@ async fn discover_sites(source: Option<SiteURLNode>, url: String, state: Arc<App
         .map(|link| link.as_str().to_owned())
         .collect();
     for link in links {
-        let url2 = link.as_str().to_owned();
-        info!("Found url: {url2}");
+        info!("Found url: {link}");
     
         let state2 = state.clone();
         let obj2 = obj.clone();
         handles.push(tokio::spawn(async move {
-            discover_sites(Some(obj2), url2, state2).await
+            discover_sites(Some(obj2), link, state2).await
         }));
     }
 
