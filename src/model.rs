@@ -16,7 +16,7 @@ impl SiteURLNode {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Record {
     pub id: Thing,
 }

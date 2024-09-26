@@ -109,6 +109,17 @@ async fn discover_sites(table: String, relate_table: String, source: Option<Site
     let findings: Vec<Record> = res.take(0)?;
     if !findings.is_empty() {
         debug!("Found url that was already searched, skipping");
+        
+        if let Some(source) = source {
+            let mut res = state.db
+                .query(format!("RELATE $sourceid->{relate_table}->$currentid"))
+                .bind(("sourceid", source.id.unwrap()))
+                .bind(("currentid", findings[0].clone().id))
+                .await?;
+            
+            // TODO maybe res.take_errors()
+            let _: Option<Relation> = res.take(0)?;
+        }
         return Ok(());
     }
 
@@ -127,6 +138,7 @@ async fn discover_sites(table: String, relate_table: String, source: Option<Site
             .bind(("currentid", newsource.id))
             .await?;
 
+        // TODO maybe res.take_errors()
         let _: Option<Relation> = res.take(0)?;
     }
 
