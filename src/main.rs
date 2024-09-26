@@ -122,10 +122,9 @@ async fn discover_sites(table: String, relate_table: String, source: Option<Site
 
     if let Some(source) = source {
         let mut res = state.db
-            .query("RELATE $sourceid->$relation->$currentid")
+            .query(format!("RELATE $sourceid->{relate_table}->$currentid"))
             .bind(("sourceid", source.id.unwrap()))
             .bind(("currentid", newsource.id))
-            .bind(("relation", relate_table.clone()))
             .await?;
 
         let _: Option<Relation> = res.take(0)?;
