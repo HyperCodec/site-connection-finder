@@ -29,6 +29,9 @@ struct Cli {
 
     #[arg(short, long, help = "The database name to use in surrealDB. Defaults to `tree-{url}` if not specified.")]
     db: Option<String>,
+
+    #[arg(short, long, help = "The table where the urls will be stored", default_value = "site")]
+    table: String,
 }
 
 struct AppState {
@@ -72,18 +75,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     });
 
     info!("Scraping for site linkages ...");
-    discover_sites(None, args.url, state).await?;
+    discover_sites(args.table, None, args.url, state).await?;
     info!("Done scraping connections");
 
     Ok(())
 }
 
 #[async_recursion]
-async fn discover_sites(source: Option<SiteURLNode>, url: String, state: Arc<AppState>) -> anyhow::Result<()> {
+async fn discover_sites(table: String, source: Option<SiteURLNode>, url: String, state: Arc<AppState>) -> anyhow::Result<()> {
     // check to make sure site isnt already there.
     let mut res = state.db
-        .query("SELECT id FROM site WHERE url = $url")
+        .query("SELECT id FROM $table WHERE url = $url")
         .bind(("url", url.clone()))
+        .bind(("table", table.clone()))
         .await?;
 
     let findings: Vec<Record> = res.take(0)?;
@@ -94,7 +98,7 @@ async fn discover_sites(source: Option<SiteURLNode>, url: String, state: Arc<App
 
     let mut obj: SiteURLNode = SiteURLNode::new(url.clone());
     let newsource: Record = state.db
-        .create("site")
+        .create(&table)
         .content(obj.clone())
         .await?
         .unwrap();
@@ -102,7 +106,7 @@ async fn discover_sites(source: Option<SiteURLNode>, url: String, state: Arc<App
 
     if let Some(source) = source {
         state.db
-            .query("RELATE $sourceid->ref->$currentid")
+            .query("RELATE $sourceid->connection->$currentid")
             .bind(("sourceid", source.id.unwrap().to_raw()))
             .bind(("currentid", newsource.id.to_raw()))
             .await?;
@@ -126,8 +130,9 @@ async fn discover_sites(source: Option<SiteURLNode>, url: String, state: Arc<App
     
         let state2 = state.clone();
         let obj2 = obj.clone();
+        let table2 = table.clone();
         handles.push(tokio::spawn(async move {
-            discover_sites(Some(obj2), link, state2).await
+            discover_sites(table2, Some(obj2), link, state2).await
         }));
     }
 
