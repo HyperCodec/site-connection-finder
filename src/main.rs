@@ -6,7 +6,7 @@ use async_recursion::async_recursion;
 use clap::Parser;
 use linkify::{LinkFinder, LinkKind};
 use model::{Record, SiteURLNode};
-use reqwest::Client;
+use reqwest::{header::CONTENT_TYPE, Client, Proxy};
 use surrealdb::{engine::local::{Db, SurrealKV}, Surreal};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber::EnvFilter;
@@ -32,6 +32,9 @@ struct Cli {
 
     #[arg(short, long, help = "The table where the urls will be stored", default_value = "site")]
     table: String,
+
+    #[arg(short, long, help = "A proxy so you dont blast your home IP across the web (recommended)")]
+    proxy: Option<String>,
 }
 
 struct AppState {
@@ -68,9 +71,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut link_finder = LinkFinder::new();
     link_finder.kinds(&[LinkKind::Url]);
 
+    let mut client_builder = Client::builder();
+
+    if let Some(proxy) = args.proxy {
+        client_builder = client_builder.proxy(Proxy::all(proxy)?);
+    }
+
     let state = Arc::new(AppState {
         db,
-        request_client: Client::new(),
+        request_client: client_builder.build()?,
         link_finder,
     });
 
@@ -114,10 +123,26 @@ async fn discover_sites(table: String, source: Option<SiteURLNode>, url: String,
 
     // get content
     let req = state.request_client
-        .get(url)
+        .get(&url)
         .build()?;
 
     let res = state.request_client.execute(req).await?;
+
+    let content_type = res.headers().get(CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    const APPLICATION_TEXT_HEADERS: [&str; 5] = [
+        "application/json",
+        "application/xml",
+        "application/javascript",
+        "application/ld+json",
+        "application/xtml+xml",
+    ];
+    if !content_type.starts_with("text/") && !APPLICATION_TEXT_HEADERS.contains(&content_type) {
+        debug!("Url {url:?} is content-type {content_type:?}, expected \"text/*\". Ignoring.");
+        return Ok(());
+    }
 
     let content = res.text().await?;
     
