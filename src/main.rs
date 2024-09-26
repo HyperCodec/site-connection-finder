@@ -106,7 +106,6 @@ async fn discover_sites(source: Option<SiteURLNode>, url: String, state: Arc<App
 
     let res = state.request_client.execute(req).await?;
 
-    // TODO probably error/warn-level logging instead of returning error when request fails.
     let content = res.text().await?;
     
     let mut handles = Vec::new();
