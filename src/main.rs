@@ -91,7 +91,6 @@ async fn discover_sites(source: Option<SiteURLNode>, url: String, state: Arc<App
     obj.id = Some(newsource.id.clone());
 
     if let Some(source) = source {
-        //println!("relating {:?} to {:?}", source.id.clone().unwrap().to_raw(), newsource.id.to_raw());
         state.db
             .query("RELATE $sourceid->ref->$currentid")
             .bind(("sourceid", source.id.unwrap().to_raw()))
