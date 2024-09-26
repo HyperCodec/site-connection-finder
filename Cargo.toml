@@ -1,0 +1,20 @@
+[package]
+name = "site-connection-finder"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "findconn"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.89"
+async-recursion = "1.1.1"
+clap = { version = "4.5.18", features = ["derive"] }
+linkify = "0.10.0"
+reqwest = "0.12.7"
+serde = { version = "1.0.210", features = ["derive"] }
+surrealdb = { version = "2.0.2", features = ["kv-surrealkv"] }
+tokio = { version = "1.40.0", features = ["full"] }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
