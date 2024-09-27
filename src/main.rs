@@ -172,7 +172,7 @@ async fn discover_sites(table: String, relate_table: String, source: Option<Site
         .map(|link| link.as_str().to_owned())
         .collect();
     for link in links {
-        info!("Found url: {link}");
+        debug!("Found url: {link}");
     
         let state2 = state.clone();
         let obj2 = obj.clone();
